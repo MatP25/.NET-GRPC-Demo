@@ -30,6 +30,10 @@ public class ToDoService : ProtoToDoService.ToDoService.ToDoServiceBase
                 },
                 CreatedAt = Timestamp.FromDateTime(DateTime.UtcNow)
             };
+
+            // Custom trailer
+            context.ResponseTrailers.Add("Custom-Trailer-Info", "Custom value");
+
             return Task.FromResult(response);
         }
         catch (Exception e)

@@ -2,6 +2,7 @@
 using Google.Protobuf.WellKnownTypes;
 using ProtoUserService;
 using ProtoToDoService;
+using Grpc.Core;
 
 // Note that the it uses HTTP instead of HTTPS to avoid certificate issues in this demo.
 using var channel = GrpcChannel.ForAddress("http://localhost:5279");
@@ -69,7 +70,6 @@ Console.ReadKey();
 Console.Clear();
 
 // Getting the user again to see the new ToDo
-// Getting a user
 Console.WriteLine("Getting user with id = 1...");
 GetUserResponse singleUserResponse2 = await userClient.GetUserAsync(new GetUserRequest { Id = 1 });
 Console.WriteLine($"Id: {singleUserResponse2.User.Id}, ");
@@ -77,6 +77,64 @@ Console.WriteLine($"Name: {singleUserResponse2.User.Name}, ");
 Console.WriteLine($"Email: {singleUserResponse2.User.Email}");
 Console.WriteLine("ToDos for this user:");
 foreach (var todo in singleUserResponse2.User.ToDos)
+{
+    Console.WriteLine($"ToDo: {todo.Id}, Title: {todo.Task}, Completed: {todo.IsCompleted}");
+}
+Console.WriteLine("Press any key to continue..."); 
+Console.ReadKey();
+Console.Clear();
+
+// Adding another ToDo to the user 2
+Console.WriteLine("Adding a ToDo to the user with id = 2...");
+AsyncUnaryCall<CreateToDoResponse> createToDoCall2 = todoClient.CreateToDoAsync(new CreateToDoRequest
+{
+    UserId = 2,
+    Task = "New ToDo Task"
+});
+CreateToDoResponse createToDoResponse2 = await createToDoCall2;
+Console.WriteLine($"Created ToDo Id: {createToDoResponse2.ToDo.Id}, ");
+Console.WriteLine($"Task: {createToDoResponse2.ToDo.Task}, ");
+Console.WriteLine($"Created At: {createToDoResponse2.CreatedAt.ToDateTime()}");
+
+// Getting response trailers
+Metadata trailers = createToDoCall2.GetTrailers();
+Console.WriteLine("Response trailers: ");
+foreach (var trailer in trailers)
+{
+    Console.WriteLine($"{trailer.Key}: {trailer.Value}");
+}
+Console.WriteLine("Press any key to continue...");
+Console.ReadKey();
+Console.Clear();
+
+//Updating a ToDo for user 2
+Console.WriteLine("Updating a ToDo for the user with id = 2...");
+AsyncUnaryCall<Empty> updateToDoCall = todoClient.UpdateToDoAsync(new UpdateToDoRequest
+{
+    UserId = 2,
+    ToDoId = createToDoResponse2.ToDo.Id,
+    Status = true // Marking the ToDo as completed
+});
+// Getting the headers 
+var updateToDoHeaders = await updateToDoCall.ResponseHeadersAsync;
+Console.WriteLine($"Updated ToDo Id: {createToDoResponse2.ToDo.Id}");
+Console.WriteLine($"Response headers: ");
+foreach (var header in updateToDoHeaders)
+{
+    Console.WriteLine($"{header.Key}: {header.Value}");
+}
+Console.WriteLine("Press any key to continue...");
+Console.ReadKey();
+Console.Clear();
+
+// Getting the user 2 again to see the new ToDo
+Console.WriteLine("Getting user with id = 2...");
+GetUserResponse singleUserResponse3 = await userClient.GetUserAsync(new GetUserRequest { Id = 2 });
+Console.WriteLine($"Id: {singleUserResponse3.User.Id}, ");
+Console.WriteLine($"Name: {singleUserResponse3.User.Name}, "); 
+Console.WriteLine($"Email: {singleUserResponse3.User.Email}");
+Console.WriteLine("ToDos for this user:");
+foreach (var todo in singleUserResponse3.User.ToDos)
 {
     Console.WriteLine($"ToDo: {todo.Id}, Title: {todo.Task}, Completed: {todo.IsCompleted}");
 }
